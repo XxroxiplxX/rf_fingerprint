@@ -25,6 +25,7 @@ def handle_client(client_socket, clients):
     try:
         while True:
             file_info = client_socket.recv(1024).decode()
+            print(file_info)
             if not file_info:
                 break
             
@@ -32,7 +33,7 @@ def handle_client(client_socket, clients):
             file_size = int(file_size)
             
             print(f"Receiving file: {file_name} of size: {file_size} bytes")
-            
+            file_name = 'iqdane/' + file_name
             with open(file_name, 'wb') as file:
                 received_size = 0
                 while received_size < file_size:
@@ -46,6 +47,7 @@ def handle_client(client_socket, clients):
             broadcast(file_name, file_size, clients, client_socket)
     finally:
         client_socket.close()
+
 
 def broadcast(file_name, file_size, clients, source_socket):
     for client in clients:

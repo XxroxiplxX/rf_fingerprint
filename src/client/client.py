@@ -1,6 +1,14 @@
 import socket
 import threading
 import os
+from rfsoc_ofdm.overlay import Overlay
+
+
+def capture_and_save(ol, filename):
+
+    with open(filename, 'w') as file:
+        for point in ol.inspectors['receiver'].get_frame():
+            file.write(f"{point.real};{point.imag}\n")
 
 def receive_files(client_socket):
     while True:
@@ -38,23 +46,37 @@ def send_file(client_socket, file_path):
         while (data := file.read(1024)):
             client_socket.send(data)
 
-def start_client(server_ip, server_port):
+def start_client(server_ip, server_port, ol):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((server_ip, server_port))
     print(f"Connected to server at {server_ip}:{server_port}")
 
     threading.Thread(target=receive_files, args=(client_socket,)).start()
-
+    counter = 0
+    MAX_COUNT = 5
     try:
-        while True:
-            file_path = input("Enter path to XML file to send: ")
+        while counter < MAX_COUNT:
+            file_path = 'iq_data_' + str(counter) + '.csv'
+            capture_and_save(ol, file_path)
             send_file(client_socket, file_path)
+            os.remove(file_path)
+            counter += 1
     except KeyboardInterrupt:
         print("Disconnecting from server.")
     finally:
         client_socket.close()
 
 if __name__ == "__main__":
-    server_ip = '0.0.0.0'  # Replace with the actual server IP
+    ol = Overlay()
+    print('overlay set')
+        # Konfiguracja ADC (odbiór sygnałów na 2432 MHz)
+    adc_sample_freq = 4844.00  # częstotliwość próbkowania w MHz
+    centre_freq = -2412  # przesunięcie częstotliwości środkowej do 2432 MHz
+
+    ol.configure_adcs(sample_freq=adc_sample_freq, centre_freq=centre_freq)
+
+    # Inicjalizacja odbiornika OFDM na 2432 MHz
+    ol.initialise_receiver(enable=1, modulation='QPSK')
+    server_ip = '192.168.0.34'  # Replace with the actual server IP
     server_port = 12346
-    start_client(server_ip, server_port)
+    start_client(server_ip, server_port, ol)
