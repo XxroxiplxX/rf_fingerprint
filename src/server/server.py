@@ -19,7 +19,7 @@ def start_server(host='0.0.0.0', port=12345):
     print(f"Odebrano nazwę pliku: {file_name}")
     
     # Tworzenie pliku CSV do zapisu
-    with open(file_name, 'w', newline='') as file:
+    with open(file_name, 'wb') as file:
         #rec_bytes = b""
         while True:
             data_chunk = client_socket.recv(1024)

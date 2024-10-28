@@ -12,7 +12,7 @@ def start_client(host='192.168.0.34', port=12345):
     client_socket.sendall(file_name.encode())
     
     # Generowanie i wysyłanie 1 000 000 tablic complex128
-    for _ in range(10):
+    for _ in range(1000000):
         # Tworzenie numpy array z liczbami zespolonymi
         array = np.array([complex(np.random.random(), np.random.random()) for _ in range(1024)], dtype=np.complex128)
         for cn in array:
