@@ -1,10 +1,11 @@
 import socket
 import threading
 import os
+import random
 from rfsoc_ofdm.overlay import Overlay
 
 
-def capture_and_save(ol, filename):
+def capture_and_save(filename,ol):
 
     with open(filename, 'w') as file:
         for point in ol.inspectors['receiver'].get_frame():
@@ -37,14 +38,16 @@ def receive_files(client_socket):
             break
 
 def send_file(client_socket, file_path):
-    file_name = os.path.basename(file_path)
-    file_size = os.path.getsize(file_path)
+    #file_name = os.path.basename(file_path)
+    #file_size = os.path.getsize(file_path)
     
-    client_socket.send(f"{file_name}:{file_size}".encode())
+    #client_socket.send(f"{file_name}:{file_size}z".encode())
     
     with open(file_path, 'rb') as file:
         while (data := file.read(1024)):
             client_socket.send(data)
+def send_header(client_socket, file_name):
+    client_socket.send(f"{file_name}".encode())
 
 def start_client(server_ip, server_port, ol):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,7 +56,8 @@ def start_client(server_ip, server_port, ol):
 
     threading.Thread(target=receive_files, args=(client_socket,)).start()
     counter = 0
-    MAX_COUNT = 5
+    MAX_COUNT = 500
+    send_header(client_socket, 'iq_data.csv')
     try:
         while counter < MAX_COUNT:
             file_path = 'iq_data_' + str(counter) + '.csv'
@@ -69,14 +73,14 @@ def start_client(server_ip, server_port, ol):
 if __name__ == "__main__":
     ol = Overlay()
     print('overlay set')
-        # Konfiguracja ADC (odbiór sygnałów na 2432 MHz)
-    adc_sample_freq = 4844.00  # częstotliwość próbkowania w MHz
-    centre_freq = -2412  # przesunięcie częstotliwości środkowej do 2432 MHz
+        
+    adc_sample_freq = 5000.00
+    centre_freq = -2452.00
 
     ol.configure_adcs(sample_freq=adc_sample_freq, centre_freq=centre_freq)
 
-    # Inicjalizacja odbiornika OFDM na 2432 MHz
+
     ol.initialise_receiver(enable=1, modulation='QPSK')
-    server_ip = '192.168.0.34'  # Replace with the actual server IP
-    server_port = 12346
+    server_ip = '192.168.10.106'  
+    server_port = 12345
     start_client(server_ip, server_port, ol)
