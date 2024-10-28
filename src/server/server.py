@@ -1,35 +1,51 @@
 import socket
-#import struct
+import numpy as np
+import struct
+import csv
 
-def start_server(host="0.0.0.0", port=12345, buffer_size=1024):
+def start_server(host='0.0.0.0', port=12345):
+    # Tworzenie socketu serwera
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen(1)
+    print("Serwer nasłuchuje...")
 
-    print(f"Serwer nasłuchuje na {host}:{port}")
-    conn, addr = server_socket.accept()
-    print(f"Połączono z {addr}")
-
-    # Odbieranie długości nazwy pliku (4 bajty)
-    #file_name_length_data = conn.recv(4)
-    #file_name_length = struct.unpack("!I", file_name_length_data)[0]
+    # Akceptowanie połączenia od klienta
+    client_socket, address = server_socket.accept()
+    print(f"Połączono z {address}")
 
     # Odbieranie nazwy pliku
-    file_name = conn.recv(11).decode()
-    print(f"Przesłany plik: {file_name}")
+    file_name = client_socket.recv(11).decode()
+    print(f"Odebrano nazwę pliku: {file_name}")
+    
+    # Tworzenie pliku CSV do zapisu
+    with open(file_name, 'w', newline='') as file:
+        csv_writer = csv.writer(file, delimiter=';')
+        
+        # Odbieranie 1 000 000 tablic complex od klienta
+        for _ in range(1_000_000):
+            # Odbieranie rozmiaru danych (8 bajtów)
+            data_size = struct.unpack(">Q", client_socket.recv(8))[0]
+            
+            # Odbieranie rzeczywistych danych
+            data_bytes = b""
+            while len(data_bytes) < data_size:
+                packet = client_socket.recv(1024)
+                if not packet:
+                    break
+                data_bytes += packet
+            
+            # Odtworzenie numpy array complex128 z bajtów
+            array = np.frombuffer(data_bytes, dtype=np.complex128)
+            
+            # Zapis do pliku CSV
+            for number in array:
+                csv_writer.writerow([f"{number.real}", f"{number.imag}"])
 
-    # Odbieranie zawartości pliku i zapisywanie do pliku lokalnego
-    with open(file_name, "wb") as f:
-        while True:
-            data = conn.recv(buffer_size)
-            if not data:
-                break
-            f.write(data)
-
-    print(f"Plik {file_name} zapisany pomyślnie.")
-    conn.close()
+    print("Zakończono zapis danych.")
+    client_socket.close()
     server_socket.close()
-    print("Serwer zamknięty.")
 
+# Uruchamianie serwera
 if __name__ == "__main__":
     start_server()
