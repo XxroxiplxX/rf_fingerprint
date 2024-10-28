@@ -20,13 +20,26 @@ def start_server(host='0.0.0.0', port=12345):
     
     # Tworzenie pliku CSV do zapisu
     with open(file_name, 'w', newline='') as file:
+        #rec_bytes = b""
+        while True:
+            data_chunk = client_socket.recv(1024)
+            if not data_chunk:
+                print('connection empty')
+                break
+            file.write(data_chunk)
+
+
+
+
+
+        '''
         csv_writer = csv.writer(file, delimiter=';')
         
         # Odbieranie 1 000 000 tablic complex od klienta
         for _ in range(1_000_000):
             # Odbieranie rozmiaru danych (8 bajtów)
             data_size = struct.unpack(">Q", client_socket.recv(8))[0]
-            
+            print(data_size)
             # Odbieranie rzeczywistych danych
             data_bytes = b""
             while len(data_bytes) < data_size:
@@ -40,7 +53,7 @@ def start_server(host='0.0.0.0', port=12345):
             
             # Zapis do pliku CSV
             for number in array:
-                csv_writer.writerow([f"{number.real}", f"{number.imag}"])
+                csv_writer.writerow([f"{number.real}", f"{number.imag}"])'''
 
     print("Zakończono zapis danych.")
     client_socket.close()
