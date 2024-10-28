@@ -2,7 +2,7 @@ import socket
 import threading
 import os
 import random
-from rfsoc_ofdm.overlay import Overlay
+#from rfsoc_ofdm.overlay import Overlay
 
 
 def capture_and_save(filename,ol):
@@ -59,28 +59,28 @@ def start_client(server_ip, server_port, ol):
     MAX_COUNT = 500
     send_header(client_socket, 'iq_data.csv')
     try:
-        while counter < MAX_COUNT:
-            file_path = 'iq_data_' + str(counter) + '.csv'
-            capture_and_save(ol, file_path)
-            send_file(client_socket, file_path)
-            os.remove(file_path)
-            counter += 1
+        with open('iq_data.csv', 'w') as file:
+            while counter < MAX_COUNT:
+                for point in [complex(random.uniform(-10, 10), random.uniform(-10, 10)) for _ in range(1024)]:
+                    file.write(f"{point.real};{point.imag}\n")
+                counter += 1
+        send_file(client_socket, 'iq_data.csv')
     except KeyboardInterrupt:
         print("Disconnecting from server.")
     finally:
         client_socket.close()
 
 if __name__ == "__main__":
-    ol = Overlay()
+    #ol = Overlay()
     print('overlay set')
         
     adc_sample_freq = 5000.00
     centre_freq = -2452.00
 
-    ol.configure_adcs(sample_freq=adc_sample_freq, centre_freq=centre_freq)
+    #ol.configure_adcs(sample_freq=adc_sample_freq, centre_freq=centre_freq)
 
 
-    ol.initialise_receiver(enable=1, modulation='QPSK')
-    server_ip = '192.168.10.106'  
+    #ol.initialise_receiver(enable=1, modulation='QPSK')
+    server_ip = '192.168.0.34'  
     server_port = 12345
-    start_client(server_ip, server_port, ol)
+    start_client(server_ip, server_port, ol=0)
